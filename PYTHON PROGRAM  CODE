@@ -1,0 +1,50 @@
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.linear_model import LogisticRegression
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.metrics import accuracy_score, classification_report
+
+# Load pre-downloaded MoneyPuck game log CSV
+# e.g., 'mp-game-by-game.csv'
+df = pd.read_csv('mp-game-by-game.csv')
+df.head()
+# Simple features: home team goals, away goals, shots, etc.
+# Adjust these column names to match your dataset
+feat_cols = ['home_goals', 'away_goals', 'home_shots', 'away_shots',
+             'home_xG', 'away_xG']
+df = df.dropna(subset=feat_cols + ['winner'])
+
+# Create binary target: 1 if home win, else 0
+df['home_win'] = (df['winner'] == 'Home').astype(int)
+
+X = df[feat_cols]
+y = df['home_win']
+
+# Split
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42)
+
+# Scale features
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+# Logistic Regression
+lr = LogisticRegression()
+lr.fit(X_train_scaled, y_train)
+y_pred_lr = lr.predict(X_test_scaled)
+acc_lr = accuracy_score(y_test, y_pred_lr)
+
+# K-NN Classifier
+knn = KNeighborsClassifier(n_neighbors=5)
+knn.fit(X_train_scaled, y_train)
+y_pred_knn = knn.predict(X_test_scaled)
+acc_knn = accuracy_score(y_test, y_pred_knn)
+
+print(f"Logistic Regression accuracy: {acc_lr:.3f}")
+print(f"K-NN (k=5) accuracy:          {acc_knn:.3f}")
+
+print("\nLogistic Regression classification report:")
+print(classification_report(y_test, y_pred_lr))
+print("\nK-NN classification report:")
+print(classification_report(y_test, y_pred_knn))
